@@ -54,11 +54,13 @@
 
 // Experiment until you find the values for servo completely up or down.
 // Default values should work OK when using a pen and reversed Z axis.
-#define PWM_MIN 50
-#define PWM_MAX 400
+// The values are roughly microseconds. Typical servos need values between
+// 1000 and 2000 us for a full sweep, with 1500 us being the center position.
+#define PWM_MIN 1200
+#define PWM_MAX 1450
 
 // Servo movement per step
-#define PWM_RESOLUTION 20
+#define PWM_RESOLUTION 10
 
 // Current pulse width setting
 volatile int pwm;
@@ -67,9 +69,15 @@ volatile int pwm;
 // _delay_us() is limited to 768us/(F_CPU in MHz) = 96us @8MHz.
 // This function therefore breaks down the delay into several calls to
 // _delay_us().
-void delayus(int useconds)
+void delayus(unsigned int useconds)
 {
-  for (int _temp=0; _temp<useconds; _temp++)
+  // coarse delay in 50us intervals
+  while (useconds > 50)
+  {
+    useconds -= 50;
+    _delay_us(50);
+  }
+  while (useconds-- > 0)
   {
     _delay_us(1);
   }
@@ -91,7 +99,7 @@ void init (void)
     
   TIMSK |=(1<<OCIE0A);  //CTC Interrupt enable
    
-  OCR0A= (8000000/(1024*50)-1);  //Set Timer to ~100Hz
+  OCR0A= (8000000U/(1024U*50U)-1U);  //Set Timer to ~100Hz
     
   //Set Z-servo to max
   pwm=PWM_MAX;  
@@ -147,7 +155,7 @@ ISR(TIMER0_COMPA_vect)
 {
   PORTB |=(1<<SERVO_PIN); //Servo pin on
 
-  _delay_us(550);         //Wait for PWM to finish    
+  //Wait for PWM to finish    
   delayus(pwm);
 
   PORTB &=~(1<<SERVO_PIN); //Servo pin off
