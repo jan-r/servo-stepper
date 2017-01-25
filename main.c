@@ -48,9 +48,10 @@
 // DO NOT CHANGE STEP_PIN (will trigger interrupt on signal edge)
 #define STEP_PIN PB2
 
-// Uncomment if you're using the Z-Axis for a pen and want to move it up
-// when homing
-#define REVERSE_Z_BEHAVIOUR
+// If you define HOME_CLOCKWISE, the home position is at the PWM maximum
+// (usually the far right/clockwise end position). If it is undefined,
+// the home position is at the PWM minimum (usually left/counter-clockwise end).
+//#define HOME_CLOCKWISE
 
 // Experiment until you find the values for servo completely up or down.
 // Default values should work OK when using a pen and reversed Z axis.
@@ -112,7 +113,7 @@ int main (void)
   sei();
   while(1)
   {
-    #ifdef REVERSE_Z_BEHAVIOUR
+    #ifdef HOME_CLOCKWISE
         
     if (pwm<=PWM_MIN)
     {
