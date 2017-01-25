@@ -48,23 +48,29 @@
 // DO NOT CHANGE STEP_PIN (will trigger interrupt on signal edge)
 #define STEP_PIN PB2
 
-// If you define HOME_CLOCKWISE, the home position is at the PWM maximum
+// If you define HOME_CLOCKWISE, the home position is at the PWM minimum
 // (usually the far right/clockwise end position). If it is undefined,
-// the home position is at the PWM minimum (usually left/counter-clockwise end).
-//#define HOME_CLOCKWISE
+// the home position is at the PWM maximum (usually left/counter-clockwise end).
+#define HOME_CLOCKWISE
 
 // Experiment until you find the values for servo completely up or down.
 // Default values should work OK when using a pen and reversed Z axis.
 // The values are roughly microseconds. Typical servos need values between
 // 1000 and 2000 us for a full sweep, with 1500 us being the center position.
 #define PWM_MIN 1200
-#define PWM_MAX 1450
+#define PWM_MAX 1550
 
 // Servo movement per step
 #define PWM_RESOLUTION 10
 
+// Set the "home" signal (pull home pin LOW) --> axis homed
+#define SIGNAL_HOME()       do{PORTB &= ~(1<<HOME_PIN);}while(0)
+
+// Reset the "home" signal (pull home pin HIGH) --> axis not homed
+#define SIGNAL_NOT_HOME()   do{PORTB |= (1<<HOME_PIN);}while(0)
+
 // Current pulse width setting
-volatile int pwm;
+int pwm;
 
 // Block for the given amount of microseconds.
 // _delay_us() is limited to 768us/(F_CPU in MHz) = 96us @8MHz.
@@ -86,24 +92,29 @@ void delayus(unsigned int useconds)
 
 void init (void)
 {
-  //IO-Ports setup
+  // IO-Ports setup
   DDRB |=(1<<SERVO_PIN) |(1<<HOME_PIN);
-  //PORTB |=(1<<DIRECTION_PIN)|(1<<STEP_PIN);
+  // PORTB |=(1<<DIRECTION_PIN)|(1<<STEP_PIN);
     
-  //Falling-edge Interrupt on PB2
+  // Falling-edge Interrupt on PB2
   MCUCR |=(1<<ISC01);
   GIMSK |=(1<<INT0);
     
-  //Timer0 setup
-  TCCR0A |=(1<<WGM01); //CTC mode, set OC0A on match
-  TCCR0B |=(1<<CS02)|(1<<CS00);  //Prescaler 1024
+  // Timer0 setup
+  TCCR0A |=(1<<WGM01);          // CTC mode, set OC0A on match
+  TCCR0B |=(1<<CS02)|(1<<CS00); // Prescaler 1024
     
   TIMSK |=(1<<OCIE0A);  //CTC Interrupt enable
    
   OCR0A= (8000000U/(1024U*50U)-1U);  //Set Timer to ~100Hz
     
-  //Set Z-servo to max
-  pwm=PWM_MAX;  
+  // Set Z-servo to home position and activate home signal
+  #ifdef HOME_CLOCKWISE
+  pwm = PWM_MIN;
+  #else
+  pwm = PWM_MAX;
+  #endif
+  SIGNAL_HOME();
 }
 
 
@@ -111,43 +122,11 @@ int main (void)
 {
   init();
   sei();
+
+  // endless loop; work is done in the ISRs
   while(1)
-  {
-    #ifdef HOME_CLOCKWISE
-        
-    if (pwm<=PWM_MIN)
-    {
-      pwm=PWM_MIN;
-    }
-    
-    if (pwm <PWM_MAX)
-    {
-      PORTB |=(1<<HOME_PIN);
-    }
-    
-    if (pwm>=PWM_MAX)
-    {
-      pwm=PWM_MAX;
-      PORTB &= ~(1<<HOME_PIN);
-    }
-    #else 
-    if (pwm<=PWM_MIN)
-    {
-      pwm=PWM_MIN;
-      PORTB &= ~(1<<HOME_PIN);
-    }
-        
-    if (pwm >PWM_MIN)
-    {
-      PORTB |=(1<<HOME_PIN);
-    }
-    
-    if (pwm>=PWM_MAX)
-    {
-      pwm=PWM_MAX;
-    }
-    #endif
-  }
+    ;
+
   return 0;
 }
 
@@ -167,13 +146,41 @@ ISR(TIMER0_COMPA_vect)
 // Count step, depending on direction setting.
 ISR(INT0_vect)
 {
+  uint8_t u8_homed = 0;
+
   if (!(PINB & (1<< DIRECTION_PIN))) 
   {
-    pwm-=PWM_RESOLUTION;
+    pwm -= PWM_RESOLUTION;
+    if (pwm <= PWM_MIN)
+    {
+      pwm = PWM_MIN;
+      #ifdef HOME_CLOCKWISE
+      u8_homed = 1U;
+      #endif
+    }
   }
   else 
   {
-    pwm+=PWM_RESOLUTION;
+    pwm += PWM_RESOLUTION;
+    if (pwm >= PWM_MAX)
+    {
+      pwm = PWM_MAX;
+      #ifndef HOME_CLOCKWISE
+      u8_homed = 1U;
+      #endif
+    }
+  }
+
+  // handle home pin
+  if (u8_homed)
+  {
+    // pull low (signal "at home position")
+    SIGNAL_HOME();
+  }
+  else
+  {
+    // set high (not homed)
+    SIGNAL_NOT_HOME();
   }
 }
 
