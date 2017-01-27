@@ -33,6 +33,24 @@ Connect the parts to the respective pins. Set step direction to
 inverted in your Machine.
 
 
+Fuses
+-----
+
+The fuses of your ATTiny should be programmed to the following values:
+
+* lfuse: 0xe2
+* hfuse: 0xdf
+
+Using avrdude, you can set the fuses with the following command line (assuming
+an ATTiny25 connected via an Atmel AN910 compatible programmer):
+
+```
+avrdude -c avr910 -P /dev/ttyUSB0 -b115200 -pt25 -U lfuse:w:0xe2:m -U hfuse:w:0xdf:m
+```
+
+(adjust -c [programmer type] -P [COM port] -b [baud rate] to your setup)
+
+
 License/Copyright
 -----------------
 

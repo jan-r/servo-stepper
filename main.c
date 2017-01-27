@@ -19,7 +19,7 @@
 //* are needed.                                                             *
 //*                                                                         *
 //***************************************************************************
-//* Pins:                                                                   *
+//* Pins (unless changed in config.h):                                      *
 //*          ______                                                         *
 //*   RESET-|      |-+5V                                                    *
 //*  HOME_Z-|ATTiny|-STEP                                                   *
@@ -28,6 +28,12 @@
 //*                                                                         *
 //* Connect the parts to the respective pins. Set step direction to         *
 //* inverted in your Machine.                                               *
+//*                                                                         *
+//***************************************************************************
+//* Fuse values:                                                            *
+//*                                                                         *
+//* lfuse: 0xe2                                                             *
+//* hfuse: 0xdf                                                             *
 //*                                                                         *
 //***************************************************************************
 //* Original code published by NilsRoe on Thingiverse                       *
@@ -40,27 +46,10 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 
-#define SERVO_PIN PB0
-#define DIRECTION_PIN PB1
-#define HOME_PIN PB3
+#include "config.h"
 
 // DO NOT CHANGE STEP_PIN (will trigger interrupt on signal edge)
 #define STEP_PIN PB2
-
-// If you define HOME_CLOCKWISE, the home position is at the PWM minimum
-// (usually the far right/clockwise end position). If it is undefined,
-// the home position is at the PWM maximum (usually left/counter-clockwise end).
-#define HOME_CLOCKWISE
-
-// Experiment until you find the values for servo completely up or down.
-// Default values should work OK when using a pen and reversed Z axis.
-// The values are roughly microseconds. Typical servos need values between
-// 1000 and 2000 us for a full sweep, with 1500 us being the center position.
-#define PWM_MIN 1200
-#define PWM_MAX 1550
-
-// Servo movement per step
-#define PWM_RESOLUTION 10
 
 // Set the "home" signal (pull home pin LOW) --> axis homed
 #define SIGNAL_HOME()       do{PORTB &= ~(1<<HOME_PIN);}while(0)
