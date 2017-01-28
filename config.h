@@ -25,8 +25,8 @@
 // The values are roughly microseconds. Typical servos need values between
 // 1000 and 2000 us for a full sweep, with 1500 us being the center position.
 // Choose different values if you don't need the full sweep.
-#define PWM_MIN   1200
-#define PWM_MAX   1550
+#define PWM_MIN   900
+#define PWM_MAX   1560
 
 
 // Servo movement per step
