@@ -60,10 +60,12 @@
 // Current pulse width setting
 int pwm;
 
+//***************************************************************************
 // Block for the given amount of microseconds.
 // _delay_us() is limited to 768us/(F_CPU in MHz) = 96us @8MHz.
 // This function therefore breaks down the delay into several calls to
 // _delay_us().
+//***************************************************************************
 void delayus(unsigned int useconds)
 {
   // coarse delay in 50us intervals
@@ -78,6 +80,10 @@ void delayus(unsigned int useconds)
   }
 }
 
+
+//***************************************************************************
+// System initialization
+//***************************************************************************
 void init (void)
 {
   // IO-Ports setup
@@ -106,6 +112,9 @@ void init (void)
 }
 
 
+//***************************************************************************
+// main function
+//***************************************************************************
 int main (void)
 {
   init();
@@ -118,20 +127,39 @@ int main (void)
   return 0;
 }
 
-// Software PWM
+
+//***************************************************************************
+// Software PWM controlled by timer overflow interrupt
+//***************************************************************************
 ISR(TIMER0_COMPA_vect)
 {
+  int local_pwm = pwm;
+
+#ifndef LIMITED_TRAVEL_RANGE
+  // travel range is not limited by the edge count interrupt, so limit it here
+  if (local_pwm < PWM_MIN)
+  {
+    local_pwm = PWM_MIN;
+  }
+  else if (local_pwm > PWM_MAX)
+  {
+    local_pwm = PWM_MAX;
+  }
+#endif
+
   PORTB |=(1<<SERVO_PIN); //Servo pin on
 
   //Wait for PWM to finish    
-  delayus(pwm);
+  delayus(local_pwm);
 
   PORTB &=~(1<<SERVO_PIN); //Servo pin off
 }
 
 
+//***************************************************************************
 // Falling edge interrupt
 // Count step, depending on direction setting.
+//***************************************************************************
 ISR(INT0_vect)
 {
   uint8_t u8_homed = 0;
@@ -141,7 +169,9 @@ ISR(INT0_vect)
     pwm -= PWM_RESOLUTION;
     if (pwm <= PWM_MIN)
     {
+      #ifdef LIMITED_TRAVEL_RANGE
       pwm = PWM_MIN;
+      #endif
       #ifdef HOME_CLOCKWISE
       u8_homed = 1U;
       #endif
@@ -152,7 +182,9 @@ ISR(INT0_vect)
     pwm += PWM_RESOLUTION;
     if (pwm >= PWM_MAX)
     {
+      #ifdef LIMITED_TRAVEL_RANGE
       pwm = PWM_MAX;
+      #endif
       #ifndef HOME_CLOCKWISE
       u8_homed = 1U;
       #endif

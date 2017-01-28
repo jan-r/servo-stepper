@@ -36,6 +36,19 @@
 #define PWM_RESOLUTION 10
 
 
+// Behaviour at end of travel range
+// IF LIMITED_TRAVEL_RANGE is defined, the servo will behave like a stepper
+// when it reaches the end of its travel range: incoming step pulses are lost,
+// so the servo will lose its position reference.
+// If the macro is commented out, incoming pulses will still be counted after
+// the servo has reached the end of its travel range. Although it will not
+// follow the incoming step commands outside its travel range, it will not lose
+// its position reference. When pulsing into the opposite direction, the servo
+// will start to move as soon as the axis position arives within the servo's
+// travel range again.
+//#define LIMITED_TRAVEL_RANGE
+
+
 // Pin configuration
 // Available pins: PB0, PB1, PB3, PB4
 // PB2 is fixed to the STEP signal, because it provides the external IRQ source
