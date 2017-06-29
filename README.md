@@ -18,6 +18,14 @@ Great for use in existing hardware. No fundamental changes in firmware
 are needed.
 
 
+See it in action
+----------------
+
+* [YouTube - Micro CNC plotter made from old DVD drives (Arduino/grbl)](https://youtu.be/HlBhCY8luEI)
+* [YouTube - Micro CNC plotter made from old DVD drives plots a floral ornament](https://youtu.be/K-D9JYRs5zM)
+
+
+
 Pins/Schematic
 --------------
 
